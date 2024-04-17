@@ -13,15 +13,17 @@ import (
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
 const (
 	host     = "localhost"
 	port     = 5432
-	user     = "" // postgres name here
-	password = "" // postgres password here
-	dbname   = "" // dbname here
+	user     = "faisal"
+	password = "1HatePasswords"
+	dbname   = "users"
 )
 
 func HashPassword(password string) (string, error) {
@@ -52,11 +54,11 @@ func (s *server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.SignUpRe
 		return nil, err
 	}
 	if exists {
-		return nil, errors.New("user already exists")
+		return nil, status.Error(codes.AlreadyExists, "user already exists")
 	}
 
 	if in.Password != in.ConfirmPassword {
-		return nil, errors.New("passwords must match")
+		return nil, status.Error(codes.InvalidArgument, "passwords must match")
 
 	}
 	_, err = tx.ExecContext(ctx, "INSERT INTO users(email, name, password, timestamp) VALUES($1, $2, $3, NOW())",
@@ -86,7 +88,7 @@ func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginRespo
 	var hashedPassword string
 	if err := row.Scan(&hashedPassword); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("user doesn't exist")
+			return nil, status.Error(codes.NotFound, "user doesn't exist")
 		}
 		return nil, err
 	}
@@ -94,7 +96,7 @@ func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginRespo
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(in.Password))
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return nil, errors.New("incorrect password")
+			return nil, status.Error(codes.InvalidArgument, "incorrect password")
 		}
 		return nil, err
 	}
