@@ -46,7 +46,6 @@ func (s *server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.SignUpRe
 	}
 	defer tx.Rollback()
 
-	// TODO: logic to check if user already exists
 	var exists bool
 	err = s.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE email = $1 OR name = $2)", in.Email, in.Name).Scan(&exists)
 	if err != nil {
