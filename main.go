@@ -21,8 +21,8 @@ import (
 const (
 	host     = "localhost"
 	port     = 5432
-	user     = "faisal"
-	password = "1HatePasswords"
+	user     = "" // provide your own username
+	password = "" // provide your own password
 	dbname   = "users"
 )
 
